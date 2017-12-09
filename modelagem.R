@@ -1,4 +1,7 @@
-# Necessario definir uma semente em relação a aleatoriedade do modelo utilizaod
+#carregando pacotes necessaios 
+require(corrplot)
+require(normtest)
+
 set.seed(6)
 
 city_dataset<-read.csv2('city_dataset.csv')
@@ -17,7 +20,12 @@ base<-data.frame(cbind(pibpercapita,pop1519p,pop2024p,pop2529p,city_dataset$pjov
 names(base)[c(5:8)]<-c('pop60p','pjovem','pmotos','pmat')
 omega<-cor(base,use = 'complete.obs')
 
-base = cbind(base,cidade =city_dataset$cidade,ano = city_dataset$ano)
+corrplot(omega)
+
+corrplot(omega, method = "color", cl.pos = "b", type = "lower", addgrid.col = "white",
+         addCoef.col = "white", tl.col = "black", tl.cex = 0.7, number.cex = 0.7, cl.cex = 0.7)
+
+  base = cbind(base,cidade =city_dataset$cidade,ano = city_dataset$ano)
 
 base<-data.frame(cbind(pibpercapita,pop1519p,pop2024p,pop2529p,city_dataset$pjovem,city_dataset$pop60p,
                        city_dataset$pmotos,city_dataset$pmat,dens_vei))
@@ -52,3 +60,27 @@ for(i in 1:10){
 
 plot(city_dataset_cluster$pjovem,city_dataset_cluster$pmotos,xlab="Porporção de jovens", ylab="Proporção de motos")
 points(kmeans_out$centers,pch=19,col=2)
+
+
+####Regressao linear multipla
+
+
+modelo <-  lm(formula = ind_acidente~pibpercapita+pop1519p+pop2024p+pop2529p+pjovem+pmotos+pmat+dens_vei,data = city_dataset_cluster)
+summary(modelo)
+
+## Os unicos parametros estatisticamente significativos sao a densidade de jovens , a densidade de motos e 
+###  a quantidade de jovens matriculados no ensino medio
+
+redefinindo <- lm(formula = ind_acidente~pjovem+pmotos+pmat,data = city_dataset_cluster)
+summary(redefinindo)
+
+## diagnosticos e medidas de ajustes
+
+boxplot(redefinindo$residuals)
+normtest::jb.norm.test(x = redefinindo$residuals)
+shapiro.test(redefinindo$residuals)
+plot(redefinindo$residuals)
+abline(h=0,col=2)
+
+
+
