@@ -74,6 +74,16 @@ summary(modelo)
 redefinindo <- lm(formula = ind_acidente~pjovem+pmotos+pmat,data = city_dataset_cluster)
 summary(redefinindo)
 
+
+fitted(redefinindo)
+confint(redefinindo)
+vcov(redefinindo)
+influence(redefinindo)
+
+# diagnostic plots 
+layout(matrix(c(1,2,3,4),2,2)) # optional 4 graphs/page 
+plot(redefinindo)
+
 ## diagnosticos e medidas de ajustes
 
 boxplot(redefinindo$residuals)
@@ -81,6 +91,10 @@ normtest::jb.norm.test(x = redefinindo$residuals)
 shapiro.test(redefinindo$residuals)
 plot(redefinindo$residuals)
 abline(h=0,col=2)
+
+hist(redefinindo$residuals,xlim = c(-10,10))
+lines(redefinindo$residuals,col=2)
+
 
 
 
