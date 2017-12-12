@@ -1,8 +1,10 @@
 ---
 title: "Modelagem - MD"
 author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante e Rafael"
-date: ""
-output: html_document
+date: ''
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -44,6 +46,7 @@ require(normtest)
 set.seed(6)
 
 city_dataset<-read.csv2('city_dataset.csv')
+city_dataset <- na.omit(city_dataset)
 head(city_dataset)
 ```
 
@@ -100,7 +103,7 @@ Criando os clusters com a função
 
 
 ```{r,message=FALSE}
-kmeans_out<-kmeans(na.omit(base[,c('pjovem','pmotos')]),centers = 4)
+kmeans_out<-kmeans(na.omit(base[,c('pjovem','pmotos','pop60p')]),centers = 4)
 kmeans_out$size
 ```
 
@@ -115,7 +118,9 @@ head(city_dataset_cluster)
 
 A proxy será uma média ponderada entre as variáveis que usamos para a criação dos centróides, ou seja, 
 
-$$k_{proxy} = peso_{motos}pmotos + peso_{jovens}pjovens$$
+$$k_{proxy} = peso_{motos}pmotos + peso_{jovens}pjovens + peso_{pop60p}pop60p$$
+
+onde $pmotos$, $pjovens$ e $pop60p$ são, respectivamente, a proporção de motos nos municípios, a proporção de jovens e a número de pessoas com mais de 60 anos na população.
 
 
 ```{r,message = FALSE, fig.align="center"}
@@ -142,15 +147,124 @@ dataset_final <- cbind(city_dataset_cluster,proxy_ind_acidente = proxy_ind_acide
 
 for( i in 1:nrow(city_dataset_cluster)){
   if(city_dataset_cluster$grupo[i]  == 1){
-    dataset_final$proxy_ind_acidente[i] = aux$pmotos[1]*dataset_final$pmotos[i] + aux$pjovem[1]*dataset_final$pjovem[i]
+    dataset_final$proxy_ind_acidente[i] = aux$pmotos[1]*dataset_final$pmotos[i] + aux$pjovem[1]*dataset_final$pjovem[i] + aux$pop60p[1]*dataset_final$pop60p[i]
   }else if(city_dataset_cluster$grupo[i]  == 2){
-    dataset_final$proxy_ind_acidente[i] = aux$pmotos[2]*dataset_final$pmotos[i] + aux$pjovem[2]*dataset_final$pjovem[i]
+    dataset_final$proxy_ind_acidente[i] = aux$pmotos[2]*dataset_final$pmotos[i] + aux$pjovem[2]*dataset_final$pjovem[i] + aux$pop60p[2]*dataset_final$pop60p[i]
   }else if(city_dataset_cluster$grupo[i]  == 3){
-    dataset_final$proxy_ind_acidente[i] = aux$pmotos[3]*dataset_final$pmotos[i] + aux$pjovem[3]*dataset_final$pjovem[i]
+    dataset_final$proxy_ind_acidente[i] = aux$pmotos[3]*dataset_final$pmotos[i] + aux$pjovem[3]*dataset_final$pjovem[i] + aux$pop60p[3]*dataset_final$pop60p[i]
   }else{
-    dataset_final$proxy_ind_acidente[i] = aux$pmotos[4]*dataset_final$pmotos[i] + aux$pjovem[4]*dataset_final$pjovem[i]
+    dataset_final$proxy_ind_acidente[i] = aux$pmotos[4]*dataset_final$pmotos[i] + aux$pjovem[4]*dataset_final$pjovem[i] + aux$pop60p[4]*dataset_final$pop60p[i]
   }  
 }
-
 ```
 
+Em estatística, uma proxy (ou variável proxy) é uma variável que não é diretamente relevante por si só, mas atua no lugar de uma variável não observável ou não mensurável para descobrir um resultado provável 
+
+Para que a variável em questão seja uma boa proxy, é preciso que haja uma forte correlação, não necessariamente uma correlação linear, com a variável que se busca analisar. Essa correlação pode ser tanto positivo quanto negativa.
+
+Com a proxy criada, vamos criar uma modelo linear pra verificar quais variáveis explicam a nossa proxy. 
+
+```{r}
+modelo <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_final)
+summary(modelo)
+```
+
+Bom, temos que as variáveis pib percapto, quantidade de jovens matriculados no ensino médio e a densidade de veículos são estatisticamente significantes para a proxy. Tirando, claro, as variáveis que foram usadas para definir o processo gerador. 
+
+
+#### Qualidade do ajuste
+
+
+Temos que olhar os resíduos para verificar se nosso modelo é adequado, ou pelo menos, razoavel.
+
+```{r,message=FALSE,fig.align='center'}
+plot(modelo$residuals,pch=20)
+abline(h=0,col=2)
+```
+
+
+Verificando normalidade dos resíduos com o `shapiro.test()`, temos :
+```{r}
+shapiro.test(modelo$residuals)
+```
+
+```{r,message=FALSE,fig.align="center"}
+normalizando = (modelo$residuals - mean(modelo$residuals))/sd(modelo$residuals)
+qqnorm(normalizando)
+abline(c(0,1),col=2)
+```
+
+
+Ou seja, pelo p-value < 2.2e-16 rejeitamos a hipótese de que os resíduos seguem uma distribuição normal. Precisamos melhorar isso. Utilizando a função `coxbox` ela nos ajuda a obter uma transformação dos dados. Tranformação essa que pode nos ajudar a obter algumas propriedades nos resíduos. 
+
+```{r,message=FALSE,fig.align='center'}
+require(MASS)
+a = MASS::boxcox(modelo)
+lambda <- a$x[which.max(a$y)];lambda
+```
+
+
+Iremos usar o varlor de x que maximiza y com a formula proposta por Box e Cox, da seguinte forma:
+
+$$y(\lambda) = \left\{\begin{matrix}
+ \frac{(Y + \lambda_{1})^{\lambda_{1}}-1}{\lambda_{1}},& \mbox{se} &  \lambda \neq 0;\\
+ log(y + \lambda_{2}),& \mbox{se} & \lambda = 0
+\end{matrix}\right.$$
+
+
+Com isso , temos:
+
+```{r}
+dataset_t = as.data.frame(matrix(rep(0,times = length(dataset_final)),nrow = nrow(dataset_final),ncol=ncol(dataset_final)))
+names(dataset_t) = names(dataset_final)
+for(i in 1:nrow(dataset_final)){
+  for(j in 1:ncol(dataset_final)){
+    aux = (((dataset_final[i,j] +lambda)^lambda)-1)/lambda
+    dataset_t[i,j] = aux
+  }
+}
+
+# dataset_t = log(dataset_final)
+head(dataset_t)
+```
+
+Logo, aplicamos novamente a regressão linear multipla: 
+
+```{r}
+modelo2 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t)
+summary(modelo2)
+```
+
+Plotando os resíduos com os dados transformados, temos
+
+```{r,message=FALSE,fig.align="center"}
+normalizando2 = (modelo2$residuals - mean(modelo2$residuals))/sd(modelo2$residuals)
+qqnorm(normalizando2)
+abline(c(0,1),col=2)
+```
+
+Verificando a transformação com log. 
+```{r}
+dataset_t_log = log(dataset_final)
+```
+
+
+
+Logo, aplicamos novamente a regressão linear multipla: 
+
+```{r}
+modelo3 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t_log)
+summary(modelo3)
+```
+
+Plotando os resíduos com os dados transformados, temos
+
+```{r,message=FALSE,fig.align="center"}
+normalizando3 = (modelo3$residuals - mean(modelo3$residuals))/sd(modelo3$residuals)
+qqnorm(normalizando3)
+abline(c(0,1),col=2)
+```
+
+É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não da conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos ajeitar esse problema.
+
+....
