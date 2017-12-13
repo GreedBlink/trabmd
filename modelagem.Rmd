@@ -296,3 +296,43 @@ shapiro.test(modelo3$residuals)
 É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não da conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos ajeitar esse problema.
 
 ....
+
+Gráficos de dispersões
+
+
+```{r,message = FALSE, fig.align='center'}
+plot( dataset_final$proxy_ind_acidente~dataset_final$pibpercapita,cex=1.1)
+plot( dataset_final$proxy_ind_acidente~dataset_final$dens_vei,cex=1.1)
+plot( dataset_final$proxy_ind_acidente~dataset_final$pmat,cex=1.1)
+```
+
+##### Tranformação da variável proxy, tranformação exp() 
+
+```{r}
+aux  = dataset_final
+aux$pibpercapita = exp(-dataset_final$pibpercapita)
+aux$dens_vei = exp(-dataset_final$dens_vei)
+aux$pmat = exp(-dataset_final$pmat)
+```
+
+
+Gráficos de dispersões
+
+
+```{r,message = FALSE, fig.align='center'}
+plot( aux$proxy_ind_acidente~dataset_final$pibpercapita,cex=1.1)
+plot( aux$proxy_ind_acidente~dataset_final$dens_vei,cex=1.1)
+plot( aux$proxy_ind_acidente~dataset_final$pmat,cex=1.1)
+```
+
+
+##### Regressão com a tranformação
+
+```{r}
+modelo <- lm(proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = aux)
+summary(modelo)
+shapiro.test(modelo$residuals)
+```
+
+
+
