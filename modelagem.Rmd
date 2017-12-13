@@ -103,7 +103,7 @@ Criando os clusters com a função
 
 
 ```{r,message=FALSE}
-kmeans_out<-kmeans(na.omit(base[,c('pjovem','pmotos','pop60p')]),centers = 4)
+kmeans_out<-kmeans(na.omit(base[,c('pjovem','pmotos','pop60p')]),centers = 7)
 kmeans_out$size
 ```
 
@@ -233,7 +233,22 @@ Logo, aplicamos novamente a regressão linear multipla:
 ```{r}
 modelo2 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t)
 summary(modelo2)
+modelo2 <-  lm(formula = proxy_ind_acidente~pibpercapita+dens_vei,data = dataset_t)
+summary(modelo2)
 ```
+
+
+Rodando separadamente regressões lineares simples:
+
+```{r}
+aux1 <- lm(formula =proxy_ind_acidente ~ pibpercapita ,data = dataset_t )
+summary(aux1)
+aux2 <- lm(formula =proxy_ind_acidente ~ dens_vei ,data = dataset_t )
+summary(aux2)
+aux3 <- lm(formula =proxy_ind_acidente ~ pmat ,data = dataset_t )
+summary(aux3)
+```
+
 
 Plotando os resíduos com os dados transformados, temos
 
@@ -242,6 +257,12 @@ normalizando2 = (modelo2$residuals - mean(modelo2$residuals))/sd(modelo2$residua
 qqnorm(normalizando2)
 abline(c(0,1),col=2)
 ```
+
+```{r}
+shapiro.test(modelo2$residuals)
+```
+
+
 
 Verificando a transformação com log. 
 ```{r}
@@ -263,7 +284,6 @@ Plotando os resíduos com os dados transformados, temos
 normalizando3 = (modelo3$residuals - mean(modelo3$residuals))/sd(modelo3$residuals)
 qqnorm(normalizando3)
 abline(c(0,1),col=2)
-
 ```
 
 Verificando normalidade desse novo modelo, temos
