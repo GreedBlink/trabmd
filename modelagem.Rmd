@@ -263,7 +263,15 @@ Plotando os resíduos com os dados transformados, temos
 normalizando3 = (modelo3$residuals - mean(modelo3$residuals))/sd(modelo3$residuals)
 qqnorm(normalizando3)
 abline(c(0,1),col=2)
+
 ```
+
+Verificando normalidade desse novo modelo, temos
+
+```{r}
+shapiro.test(modelo3$residuals)
+```
+
 
 É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não da conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos ajeitar esse problema.
 
