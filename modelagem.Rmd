@@ -104,7 +104,7 @@ Criando os clusters com a função:
 
 
 ```{r,message=FALSE}
-kmeans_out<-kmeans(na.omit(base[,c('pjovem','pmotos','pop60p')]),centers = 7)
+kmeans_out<-kmeans(na.omit(base[,c('pjovem','pmotos','pop60p')]),centers = 6)
 kmeans_out$size
 ```
 
