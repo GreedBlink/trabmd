@@ -1,6 +1,6 @@
 ---
 title: "Modelagem - MD"
-author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante e Rafael"
+author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante, Michelle e Rafael"
 date: ''
 output:
   html_document: default
@@ -20,21 +20,21 @@ A propsota dessa modelagem é aplicar conhecimentos e técnicas em modelos linea
 A modelagem será feita em duas partes: 
 
   - Análise de cluster (iremos agrupar os municípios)
-  - Regressão linear multipla e tratamento dos resíduos
+  - Regressão linear múltipla e tratamento dos resíduos
 
 
 <br><br>
 
 #### Análise de cluster
 
-No banco de dados, não temos nenhuma variável que seja contextualizada para nosso problema, ou seja, não temos variáveis que remetem a óbtos, acidentes em rodovias, boletins de ocorrência e etc. a ideia da clusterização é nos ajudara criar uma variável proxy que, de alguma forma, nos indique uma medida de acidentes em estradas. 
+No banco de dados, não temos nenhuma variável que seja contextualizada para nosso problema, ou seja, não temos variáveis que remetem a óbtos, acidentes em rodovias, boletins de ocorrência e etc. a ideia da clusterização é nos ajudar a criar uma variável proxy que, de alguma forma, nos indique uma medida de acidentes em estradas. 
 
 
 <br><br>
 
 ##### Metodologia utilizada na abordagem
 
-Como esse é um relatório, não explicitaremos a metodologia. Porém, pra mais detalhes, há o trabalho em **PDF**. 
+Como esse é um relatório, não explicitaremos a metodologia. Porém, para mais detalhes, há o trabalho em **PDF**. 
 
 
 
@@ -51,7 +51,7 @@ head(city_dataset)
 ```
 
 
-Algumas variáveis como os grupos de jovens foram transformadas, além disso, criamos a densidade de veiculos e o pib percapito pra cada município. 
+Algumas variáveis, como os grupos de jovens, foram transformadas. Além disso, criamos a densidade de veículos e o PIB *percapito* para cada município. 
 
 
 ```{r novas variaveis, message=FALSE}
@@ -65,18 +65,18 @@ pop2529p     <-city_dataset$pop2529/city_dataset$populacao
 base<-data.frame(cbind(pibpercapita,pop1519p,pop2024p,pop2529p,city_dataset$pjovem,city_dataset$pop60p,city_dataset$pmotos,city_dataset$pmat,dens_vei))
 ```
 
-Depois de incorporar as transformações no bando de dados, podemos fazer a clusterização. Chegamos a uma inferência subjetiva de que teriamos  mais chances de ter um óbto em um acidente de trânsito que envolve-se moto e jovens. Essa é uma informação útil para o agrupamento. 
+Depois de incorporar as transformações no bando de dados, podemos fazer a clusterização. Chegamos a uma inferência subjetiva de que teríamos  mais chances de ter um óbto em um acidente de trânsito envolvendo motos e jovens. Essa é uma informação útil para o agrupamento. 
 
-Usaremos um método não hierárquico , o algoritmo de k-means, para a clusterização. Os métodos de agrupamentos se baseam em distâncias. 
+Usaremos um método não hierárquico, o algoritmo de k-means, para a clusterização. Os métodos de agrupamentos se baseam em distâncias. 
 
-Basicamente, o modeloe de Kmeans consiste em em fazer uma escolha inicial dos k elementos que formam as sementes iniciais. Esta escolha pode ser feita da seguinte forma:
+Basicamente, o modelo de Kmeans consiste em fazer uma escolha inicial dos k elementos que formam as sementes iniciais. Esta escolha pode ser feita da seguinte forma:
 
-  - Selecionado as k primeiras observações
+  - Selecionado as k primeiras observações;
   - Selecionando k observações aleatorioamente; e
   - Escolhendo k observações de modo que seus valores sejam bastente diferentes.
   
   
-Escolhida as sementes iniciais, é calculada a distância de cada elemento em relação às sementes., agrupando o elemento ao grupo que possuir a menor distância e recalculando o centróide do mesmo. O procedimento, naturalmente, é repetido até que todos os elementos facam parte de um dos clusters.
+Escolhida as sementes iniciais, é calculada a distância de cada elemento em relação às sementes, agrupando o elemento ao grupo que possuir a menor distância e recalculando o centróide do mesmo. O procedimento, naturalmente, é repetido até que todos os elementos façam parte de um dos clusters.
 
 
 
@@ -99,7 +99,7 @@ names(base)[c(5:8)]<-c('pop60p','pjovem','pmotos','pmat')
 ```
 
 
-Criando os clusters com a função 
+Criando os clusters com a função: 
 
 
 ```{r,message=FALSE}
@@ -116,7 +116,7 @@ city_dataset_cluster <- cbind(base,grupos = membros)
 head(city_dataset_cluster)
 ```
 
-A proxy será uma média ponderada entre as variáveis que usamos para a criação dos centróides, ou seja, 
+A *proxy* será uma média ponderada entre as variáveis que usamos para a criação dos centróides, ou seja, 
 
 $$k_{proxy} = peso_{motos}pmotos + peso_{jovens}pjovens + peso_{pop60p}pop60p$$
 
@@ -158,24 +158,24 @@ for( i in 1:nrow(city_dataset_cluster)){
 }
 ```
 
-Em estatística, uma proxy (ou variável proxy) é uma variável que não é diretamente relevante por si só, mas atua no lugar de uma variável não observável ou não mensurável para descobrir um resultado provável 
+Em estatística, uma *proxy* (ou variável proxy) é uma variável que não é diretamente relevante por si só, mas atua no lugar de uma variável não observável ou não mensurável para descobrir um resultado provável.
 
-Para que a variável em questão seja uma boa proxy, é preciso que haja uma forte correlação, não necessariamente uma correlação linear, com a variável que se busca analisar. Essa correlação pode ser tanto positivo quanto negativa.
+Para que a variável em questão seja uma boa proxy, é preciso que haja uma forte correlação, não necessariamente linear, com a variável que se busca analisar. Essa correlação pode ser tanto positiva quanto negativa.
 
-Com a proxy criada, vamos criar uma modelo linear pra verificar quais variáveis explicam a nossa proxy. 
+Com a proxy criada, vamos criar um modelo linear pra verificar quais variáveis explicam a nossa proxy. 
 
 ```{r}
 modelo <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_final)
 summary(modelo)
 ```
 
-Bom, temos que as variáveis pib percapto, quantidade de jovens matriculados no ensino médio e a densidade de veículos são estatisticamente significantes para a proxy. Tirando, claro, as variáveis que foram usadas para definir o processo gerador. 
+Temos que as variáveis PIB percapto, quantidade de jovens matriculados no ensino médio e a densidade de veículos são estatisticamente significantes para a proxy. Tirando, claro, as variáveis que foram usadas para definir o processo gerador. 
 
 
 #### Qualidade do ajuste
 
 
-Temos que olhar os resíduos para verificar se nosso modelo é adequado, ou pelo menos, razoavel.
+Temos que olhar os resíduos para verificar se nosso modelo é adequado, ou pelo menos, razoável.
 
 ```{r,message=FALSE,fig.align='center'}
 plot(modelo$residuals,pch=20)
@@ -195,7 +195,7 @@ abline(c(0,1),col=2)
 ```
 
 
-Ou seja, pelo p-value < 2.2e-16 rejeitamos a hipótese de que os resíduos seguem uma distribuição normal. Precisamos melhorar isso. Utilizando a função `coxbox` ela nos ajuda a obter uma transformação dos dados. Tranformação essa que pode nos ajudar a obter algumas propriedades nos resíduos. 
+Ou seja, pelo p-valor < 2.2e-16, rejeitamos a hipótese de que os resíduos seguem uma distribuição normal. Precisamos melhorar isso. A função `boxcox` nos ajuda a obter uma transformação dos dados, tranformação essa que pode nos ajudar a obter algumas propriedades desejadas nos resíduos. 
 
 ```{r,message=FALSE,fig.align='center'}
 require(MASS)
@@ -204,7 +204,7 @@ lambda <- a$x[which.max(a$y)];lambda
 ```
 
 
-Iremos usar o varlor de x que maximiza y com a formula proposta por Box e Cox, da seguinte forma:
+Iremos usar o varlor de $\lambda$ que maximiza y com a fórmula proposta por Box e Cox, da seguinte forma:
 
 $$y(\lambda) = \left\{\begin{matrix}
  \frac{(Y + \lambda_{1})^{\lambda_{1}}-1}{\lambda_{1}},& \mbox{se} &  \lambda \neq 0;\\
@@ -212,7 +212,7 @@ $$y(\lambda) = \left\{\begin{matrix}
 \end{matrix}\right.$$
 
 
-Com isso , temos:
+Com isso, temos:
 
 ```{r}
 dataset_t = as.data.frame(matrix(rep(0,times = length(dataset_final)),nrow = nrow(dataset_final),ncol=ncol(dataset_final)))
@@ -228,7 +228,7 @@ for(i in 1:nrow(dataset_final)){
 head(dataset_t)
 ```
 
-Logo, aplicamos novamente a regressão linear multipla: 
+Logo, aplicamos novamente a regressão linear múltipla: 
 
 ```{r}
 modelo2 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t)
@@ -250,7 +250,7 @@ summary(aux3)
 ```
 
 
-Plotando os resíduos com os dados transformados, temos
+Plotando os resíduos com os dados transformados, temos:
 
 ```{r,message=FALSE,fig.align="center"}
 normalizando2 = (modelo2$residuals - mean(modelo2$residuals))/sd(modelo2$residuals)
@@ -270,8 +270,7 @@ dataset_t_log = log(dataset_final)
 ```
 
 
-
-Logo, aplicamos novamente a regressão linear multipla: 
+Logo, aplicamos novamente a regressão linear múltipla: 
 
 ```{r}
 modelo3 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t_log)
@@ -293,11 +292,11 @@ shapiro.test(modelo3$residuals)
 ```
 
 
-É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não da conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos ajeitar esse problema.
+É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não dá conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos resolver esse problema.
 
 ....
 
-Gráficos de dispersões
+Gráficos de dispersões:
 
 
 ```{r,message = FALSE, fig.align='center'}
