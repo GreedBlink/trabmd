@@ -279,6 +279,12 @@ modelo3 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = da
 summary(modelo3)
 ```
 
+
+$$Y = \beta_{0} -\beta_{1}x_{1} - \beta_{2}x_{2} - \beta_{3}x_{3} + e_{i}, \hspace{0.2cm} \mbox{para} \hspace{0.15cm} i = 1, \dots, n$$
+
+onde, $e_i \sim N(0,\alpha^{2})$ ,  onde $e_i$ são i.i.d.
+
+
 Plotando os resíduos com os dados transformados, temos
 
 ```{r,message=FALSE,fig.align="center"}
@@ -338,7 +344,23 @@ Gráficos de dispersões:
 
 
 ```{r,message = FALSE, fig.align='center'}
+old.par <- par(mfrow=c(2,2))
 plot( dataset_final$proxy_ind_acidente~dataset_final$pibpercapita,cex=1.1)
 plot( dataset_final$proxy_ind_acidente~dataset_final$dens_vei,cex=1.1)
 plot( dataset_final$proxy_ind_acidente~dataset_final$pmat,cex=1.1)
+par(old.par)
 ```
+
+#### Conclusão
+
+Ficou evidente que precisamos de uma amostra maior, dados de 2010 à 2016 não são suficientes para garantir com propriedade se a proxy criada é adequada para ser utilizada na medição de acidentes de transitos nas rodovias dos municípios de São Paulo. Tentamos transformar os dados que, em certo ponto, melhorou algumas propriedades. 
+
+Com poucos dados, para esse fim, temos um viés em relação aos resíduos. Com essa amostra temos uma probabilidade grande de cometer o erro do tipo I nos testes estatísticos que necessitam de normalidade dos resíduos. 
+
+Se não considerássemos os testes e olhassemos apenas para os gráficos (histograma, qqnorm e etc) poderíamos assumir um comportamento normal. 
+
+Verificamos que possuíamos *outliers*, cerca de 25, e que tirando eles poderíamos ter normalidade nos resíduos. O que também não aconteceu, mesmo usando testes mais *fracos* para essa propriedade. 
+
+Então, como proposta de melhora na modelagem, consideramos obter uma amostra maior. Pois isso pode interferir diretamente na clusterização, dividindo melhor os municípios e seus grupos. Gerando menos concentração. Consequentemente termos uma proxy melhor e poderemos ver uma relação mais clara e forte com as variáveis explicativas, como o pib percapito e a densidade de veículos, jpa que usamos as variáveis *proporção de motos*, *proporção de jovens* e *proporção de pessoas com mais de 60 anos* para o processo gerador. 
+
+
