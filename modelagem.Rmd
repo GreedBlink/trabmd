@@ -42,6 +42,7 @@ Como esse é um relatório, não explicitaremos a metodologia. Porém, para mais
 #carregando pacotes necessaios 
 require(corrplot)
 require(normtest)
+require(dplyr)
 
 set.seed(6)
 
@@ -294,6 +295,43 @@ shapiro.test(modelo3$residuals)
 
 
 É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não dá conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos resolver esse problema.
+
+Ao fazer o boxplot da proxy transformada, podemos perceber que há alguns outliers:
+
+```{r}
+boxplot(dataset_t_log$proxy_ind_acidente)
+```
+
+Iremos retirar estes outliers do conjunto de dados:
+
+```{r, fig.show="hide", warning=F}
+obs <- boxplot(dataset_t_log$proxy_ind_acidente)
+out <- obs$out
+
+dataset_t_log <- dataset_t_log %>% filter(!(proxy_ind_acidente %in% out))
+```
+
+Aplicamos mais uma vez a regressão linear múltipla: 
+
+```{r}
+modelo4 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t_log)
+summary(modelo4)
+```
+
+Plotando os resíduos com os dados transformados sem outliers, temos
+
+```{r,message=FALSE,fig.align="center"}
+normalizando4 = (modelo4$residuals - mean(modelo4$residuals))/sd(modelo4$residuals)
+qqnorm(normalizando4)
+abline(c(0,1),col=2)
+```
+
+Verificando normalidade desse novo modelo, temos
+
+```{r}
+shapiro.test(modelo4$residuals)
+```
+
 
 ....
 
