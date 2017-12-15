@@ -1,6 +1,6 @@
 ---
 title: "Modelagem - MD"
-author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante, Michelle e Rafael"
+author: "Jonatha Azevedo, Leonardo Filgueira, George Amarante, Michelle Jerônimo e Rafael Rangel"
 date: ''
 output:
   html_document: default
@@ -43,6 +43,7 @@ Como esse é um relatório, não explicitaremos a metodologia. Porém, para mais
 require(corrplot)
 require(normtest)
 require(dplyr)
+require(lmtest)
 
 set.seed(6)
 
@@ -197,7 +198,23 @@ abline(c(0,1),col=2)
 ```
 
 
-Ou seja, pelo p-valor < 2.2e-16, rejeitamos a hipótese de que os resíduos seguem uma distribuição normal. Precisamos melhorar isso. A função `boxcox` nos ajuda a obter uma transformação dos dados, tranformação essa que pode nos ajudar a obter algumas propriedades desejadas nos resíduos. 
+Ou seja, pelo p-valor < 2.2e-16, rejeitamos a hipótese de que os resíduos seguem uma distribuição normal. Vejamos também o histograma dos resíduos, com a curva da distribuição normal sobre o gráfico:
+
+Histograma dos resíduos e curva da distribuição normal sobre o histograma:
+
+```{r}
+hist(modelo$residuals, prob = T)
+curve(dnorm(x, mean(modelo$residuals), sd(modelo$residuals)), add = T, col = "royalblue")
+```
+
+Verificando homocedasticidade dos resíduos com o teste de Breusch-Pagan:
+
+```{r}
+bptest(modelo)
+```
+
+
+O gráfico confirma o que concluímos com o teste de Shapiro. Por outro lado, pelo teste de Breusch-Pagan, que testa a hipótese nula de que os resíduos do modelo são homocedásticos, retorna um resultado que pode ser satisfatório. Ainda assim precisamos melhorar isso. A função `boxcox` nos ajuda a obter uma transformação dos dados, tranformação essa que pode nos ajudar a obter algumas propriedades desejadas nos resíduos. 
 
 ```{r,message=FALSE,fig.align='center'}
 require(MASS)
@@ -235,22 +252,14 @@ Logo, aplicamos novamente a regressão linear múltipla:
 ```{r}
 modelo2 <-  lm(formula = proxy_ind_acidente~pibpercapita+pmat+dens_vei,data = dataset_t)
 summary(modelo2)
+```
+
+Como a variável *pmat* não é significativa:
+
+```{r}
 modelo2 <-  lm(formula = proxy_ind_acidente~pibpercapita+dens_vei,data = dataset_t)
 summary(modelo2)
 ```
-
-
-Rodando separadamente regressões lineares simples:
-
-```{r}
-aux1 <- lm(formula =proxy_ind_acidente ~ pibpercapita ,data = dataset_t )
-summary(aux1)
-aux2 <- lm(formula =proxy_ind_acidente ~ dens_vei ,data = dataset_t )
-summary(aux2)
-aux3 <- lm(formula =proxy_ind_acidente ~ pmat ,data = dataset_t )
-summary(aux3)
-```
-
 
 Plotando os resíduos com os dados transformados, temos:
 
@@ -264,6 +273,32 @@ abline(c(0,1),col=2)
 shapiro.test(modelo2$residuals)
 ```
 
+Visualizando a distribuição dos resíduos e plotando a densidade da distribuição normal:
+
+```{r}
+hist(modelo2$residuals, prob = T)
+curve(dnorm(x, mean(modelo2$residuals), sd(modelo2$residuals)), add = T, col = "royalblue")
+```
+
+Verificando homocedasticidade dos resíduos com o teste de Breusch-Pagan:
+
+```{r}
+bptest(modelo2)
+```
+
+Pudemos perceber que, apesar de os dados não se ajustarem tão bem à distribuição normal, os resíduos são valores muito próximos de 0, com o dígito significativo aparecendo apenas na 5ª casa decimal.
+
+
+Rodando separadamente regressões lineares simples:
+
+```{r}
+aux1 <- lm(formula =proxy_ind_acidente ~ pibpercapita ,data = dataset_t )
+summary(aux1)
+aux2 <- lm(formula =proxy_ind_acidente ~ dens_vei ,data = dataset_t )
+summary(aux2)
+aux3 <- lm(formula =proxy_ind_acidente ~ pmat ,data = dataset_t )
+summary(aux3)
+```
 
 
 Verificando a transformação com log. 
@@ -300,7 +335,22 @@ shapiro.test(modelo3$residuals)
 ```
 
 
-É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não dá conta da outra "calda". Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos resolver esse problema.
+Visualizando a distribuição dos resíduos e plotando a densidade da distribuição normal:
+
+```{r}
+hist(modelo3$residuals, prob = T)
+curve(dnorm(x, mean(modelo3$residuals), sd(modelo3$residuals)), add = T, col = "royalblue")
+```
+
+Verificando homocedasticidade dos resíduos com o teste de Breusch-Pagan:
+
+```{r}
+bptest(modelo3)
+```
+
+
+É notável que a primeira transformação é melhor se olharmos a calda superior do qqplot dos resíduos, mas ela não dá conta da outra "calda".
+Ainda assim, observando o histograma acima, percebemos que os resíduos estão próximos da distribuição normal. Podemos aplicar novamente o teste de transformação, boxcox, e verificar se conseguimos resolver esse problema.
 
 Ao fazer o boxplot da proxy transformada, podemos perceber que há alguns outliers:
 
@@ -331,11 +381,25 @@ qqnorm(normalizando4)
 abline(c(0,1),col=2)
 ```
 
-Verificando normalidade desse novo modelo, temos
+Verificando normalidade desse novo modelo, temos:
 
 ```{r}
 shapiro.test(modelo4$residuals)
 ```
+
+Histograma dos resíduos e curva da distribuição normal sobre o histograma:
+
+```{r}
+hist(modelo4$residuals, prob = T)
+curve(dnorm(x, mean(modelo4$residuals), sd(modelo4$residuals)), add = T, col = "royalblue")
+```
+
+Verificando homocedasticidade dos resíduos com o teste de Breusch-Pagan:
+
+```{r}
+bptest(modelo4)
+```
+
 
 
 ....
